@@ -123,4 +123,3 @@ def main(test: str) -> list:
     sortedranked = sorted(ranked)
     res = [senlist[index] for index in sortedranked]
     return res
-main()

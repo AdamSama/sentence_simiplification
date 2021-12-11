@@ -20,15 +20,15 @@ import unicodedata
 import sys
 from collections import Counter
 import nltk
-nltk.download('brown')
+# nltk.download('brown')
 from nltk.corpus import brown
 from nltk import word_tokenize
-nltk.download('punkt')
-nltk.download('stopwords')
-nltk.download('wordnet')
+# nltk.download('punkt')
+# nltk.download('stopwords')
+# nltk.download('wordnet')
 from nltk.corpus import stopwords
 from nltk import pos_tag
-nltk.download('averaged_perceptron_tagger')
+# nltk.download('averaged_perceptron_tagger')
 from gensim.test.utils import datapath, get_tmpfile
 from gensim.models import KeyedVectors
 from gensim.scripts.glove2word2vec import glove2word2vec
@@ -38,6 +38,7 @@ from sklearn.metrics import f1_score
 import keras.callbacks
 from keras import backend as K
 from keras.models import load_model
+import json
 
 """## First part: The Complex Word Identification Model:"""
 
@@ -309,6 +310,11 @@ model_save_name = 'model_CWI_full.h5'
 path_dir = f"../model/{model_save_name}"
 try:
     model = load_model(path_dir)
+    with open('../data/word2index.json', 'w') as outstream:
+        json.dump(word2index, outstream)
+    with open('../data/sent_max_length.txt', 'w') as outfile:
+        print(sent_max_length)
+        outfile.write(str(sent_max_length))
 except:
 
     from keras.models import Model, Input
@@ -343,6 +349,7 @@ except:
     model_save_name = 'model_CWI_full.h5'
     path_dir = f"../model/{model_save_name}"
     model.save(path_dir)
-
-def helper():
-    return word2index, sent_max_length
+    with open('../data/word2index.json', 'w') as outstream:
+        json.dump(word2index, outstream)
+    with open('../data/sent_max_length.txt', 'w') as outfile:
+        outfile.write(sent_max_length)

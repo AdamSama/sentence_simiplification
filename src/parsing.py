@@ -12,22 +12,24 @@ FILE_PATH = '../data/data1/PWKP_108016'
 This page provides utility functions that breaks down a complex sentences into multiple simpler ones.
 '''
 
-def action(original: str) -> str:
-    if original[-1] == '.':
-        original = original[:-1]
-    tree = next(parser.parse(parser.tokenize(original)))
+def action(sent: str) -> str:
+    if sent[-1] == '.':
+        sent = sent[:-1]
+    tree = next(parser.parse(parser.tokenize(sent)))
     tree = ParentedTree.convert(tree)
-    res2 = list()
+    res2 = set()
     res = list()
     for child in tree[0]:
         if child.label() == ',':
             del tree[child.treeposition()]
     treelist = removecomplex(tree)
+    # for treee in treelist:
+    #     print(treee)
     for index, node in enumerate(treelist):
         # node.draw()
         lis = removeconjunction(node)
         for each in lis:
-            # each.draw()
+            # print(" ".join(each.leaves()))
             res.append(each)
     for i in res:
         string = " ".join(i.leaves())
@@ -35,8 +37,8 @@ def action(original: str) -> str:
             string += '.'
         if string[0].islower():
             string = string[0].upper() + string[1:]
-        print(string)
-        res2.append(res2)
+        # print(string)
+        res2.add(string)
     return res2
 
 def removecomplex(tree: Tree) -> list:
@@ -44,7 +46,7 @@ def removecomplex(tree: Tree) -> list:
     for subtree in reversed(list(tree.subtrees())):
         hasNP = False
         if subtree.label() == 'SBAR':
-            subtree.draw()
+            # subtree.draw()
             for index, children in enumerate(subtree):
                 i = index
                 if subtree.label() == 'SBAR' and children.label() == 'S':
@@ -54,33 +56,49 @@ def removecomplex(tree: Tree) -> list:
                             hasNP = True
             ## Meaning that we don't have to take subject from other part of the sentence.
             if hasNP:
-                # if subtree[i][0].label() == ',':
-                #     subtree[i].draw()
-                #     del subtree[i][subtree[i][0].treeposition]
                 subtrees.append(subtree[i])
-
+                # print(' '.join(subtree[i].leaves()))
                 del tree[subtree.treeposition()]
             else:
-                for index, node in enumerate(subtree.parent()):
-                    if node.label() == 'NP':
-                        tree1 = node
-                    elif node.label() == 'VP':
-                        for subindex, subnode in enumerate(node):
-                            if subnode.label()[:2] == 'VB':
-                                tree2 = subnode
-                treetemp1 = copy.deepcopy(tree2)
-                treetemp2 = copy.deepcopy(tree1)
-                del tree[subtree[0].treeposition()]
-                subtree.insert(0, treetemp1)
-                subtree.insert(0, treetemp2)
-                subtrees.append(subtree)
-                del tree[subtree.treeposition()]
+                # print('No NP')
+                # print(" ".join(tree.leaves()))
+                # print(" ".join(subtree.leaves()))
+                # tree.draw()
+                if subtree.leaves()[0] in ['that', 'which']:
+                    prevs = list()
+                    for prev in list(tree.subtrees()):
+                        if prev == subtree:
+                            break
+                        else:
+                            if prev.label() == 'NP':
+                                prevs.append(prev)
+                    np = copy.deepcopy(prevs[-1])
+                    newnode = copy.deepcopy(subtree)
+                    newnode.insert(0, np)
+                    subtrees.append(newnode)
+                    del tree[subtree.treeposition()]
+                else:
+                    for index, node in enumerate(subtree.parent()):
+                        if node.label() == 'NP':
+                            tree1 = node
+                        elif node.label() == 'VP':
+                            for subindex, subnode in enumerate(node):
+                                if subnode.label()[:2] == 'VB':
+                                    tree2 = subnode
+                    treetemp1 = copy.deepcopy(tree2)
+                    treetemp2 = copy.deepcopy(tree1)
+                    del tree[subtree[0].treeposition()]
+                    subtree.insert(0, treetemp1)
+                    subtree.insert(0, treetemp2)
+                    subtrees.append(subtree)
+                    del tree[subtree.treeposition()]
 
     # if tree[0].label() == ',':
     #     del tree[tree[0].treeposition]
+    # print(' '.join(tree.leaves()))
     subtrees.append(tree)
-    for subtree in subtrees:
-        subtree.draw()
+    # for subtree in subtrees:
+    #     subtree.draw()
     return subtrees
 
 def removeconjunction(tree: Tree) -> Tree:
@@ -89,31 +107,41 @@ def removeconjunction(tree: Tree) -> Tree:
     return lis
 
 # If we see a conjunction or , remove them by connecting all its sliblings to their grandparents.
-def helper(tree: Tree) -> list:
+def helper(temp: Tree) -> list:
     changed = False
     subtreelist = list()
     result = list()
     # tree.draw()
+    tree = copy.deepcopy(temp)
     for subtree in list(list(tree.subtrees())):
         if subtree.label() == 'CC' or subtree.label() == ',':
-            # print(subtree.label())
             parent = subtree.parent()
-            grandparent = parent.parent()
-            grandposition = grandparent.treeposition()
-            # print(grandparent.label())
             for children in parent:
                 newnode = copy.deepcopy(tree)
+                for subtree2 in list(list(newnode.subtrees())):
+                    if subtree2 == subtree:
+                        temp2 = subtree2
+                        # temp2.parent().draw()
+                        parent3 = temp2.parent()
                 if children.label() != 'CC' and children.label() != ',':
-                    newnode[grandposition].insert(len(grandparent), copy.deepcopy(children))
-                    # print(children.label())
-                    del newnode[children.treeposition()]
-                    del newnode[parent.treeposition()]
+                    toDelete = True
+                    while toDelete:
+                        for otherchildren in parent3:
+
+                            if children != otherchildren:
+                                print(otherchildren.leaves())
+                                
+                                del newnode[otherchildren.treeposition()]
+                                break
+                        
+                        if len(parent3) == 1:
+                            toDelete = False
                     subtreelist.append(newnode)
                     # newnode.draw()
             changed = True
             break
     if changed:
-        tree.draw()
+        # tree.draw()
         for each in subtreelist:
             newlist = helper(each)
             if len(newlist) != 0:
@@ -127,3 +155,4 @@ def run(sen: str) -> None:
     # file = File(FILE_PATH, True)
     sentences = action(sen)
     return sentences
+# run("When I'm on the courts or on the court playing, I'm a competitor and I want to beat every single person whether they're in the locker room or across the net.")
