@@ -18,20 +18,23 @@ def action(sent: str) -> str:
     tree = next(parser.parse(parser.tokenize(sent)))
     tree = ParentedTree.convert(tree)
     res2 = set()
-    res = list()
+    res = []
+    # tree.draw()
     for child in tree[0]:
         if child.label() == ',':
             del tree[child.treeposition()]
+    # tree.draw()
     treelist = removecomplex(tree)
-    # for treee in treelist:
-    #     print(treee)
+    # # for treee in treelist:
+    # #     print(treee)
+    
     for index, node in enumerate(treelist):
         # node.draw()
         lis = removeconjunction(node)
         for each in lis:
             # print(" ".join(each.leaves()))
             res.append(each)
-    for i in res:
+    for i in res :
         string = " ".join(i.leaves())
         if string[-1] != '.':
             string += '.'
@@ -63,7 +66,7 @@ def removecomplex(tree: Tree) -> list:
                 # print('No NP')
                 # print(" ".join(tree.leaves()))
                 # print(" ".join(subtree.leaves()))
-                # tree.draw()
+                # subtree.draw()
                 if subtree.leaves()[0] in ['that', 'which']:
                     prevs = list()
                     for prev in list(tree.subtrees()):
@@ -78,6 +81,7 @@ def removecomplex(tree: Tree) -> list:
                     subtrees.append(newnode)
                     del tree[subtree.treeposition()]
                 else:
+                    # tree.draw()
                     for index, node in enumerate(subtree.parent()):
                         if node.label() == 'NP':
                             tree1 = node
@@ -127,13 +131,12 @@ def helper(temp: Tree) -> list:
                     toDelete = True
                     while toDelete:
                         for otherchildren in parent3:
-
+                            # parent3.draw()
                             if children != otherchildren:
-                                print(otherchildren.leaves())
-                                
                                 del newnode[otherchildren.treeposition()]
+                                # newnode.draw()
                                 break
-                        
+                        # parent3.draw()
                         if len(parent3) == 1:
                             toDelete = False
                     subtreelist.append(newnode)
@@ -154,5 +157,6 @@ def helper(temp: Tree) -> list:
 def run(sen: str) -> None:
     # file = File(FILE_PATH, True)
     sentences = action(sen)
+    # print(sentences)
     return sentences
 # run("When I'm on the courts or on the court playing, I'm a competitor and I want to beat every single person whether they're in the locker room or across the net.")
