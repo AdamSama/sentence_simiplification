@@ -72,7 +72,7 @@ def get_bert_candidates(input_text, list_cwi_predictions, tokenizer, model):
 
 
 
-def main(list_texts: str):
+def main(bag: str):
   model_save_name = 'model_CWI_full.h5'
   path_dir = f"../model/{model_save_name}"
 
@@ -94,21 +94,27 @@ def main(list_texts: str):
   tokenizer = BertTokenizer.from_pretrained(bert_model)
   model = BertForMaskedLM.from_pretrained(bert_model)
   model.eval()
-  newlis = []
-  for input_text in list_texts:
-    new_text = input_text
-    input_padded, index_list, len_list = process_input(input_text, word2index, sent_max_length)
-    pred_cwi = model_cwi.predict(input_padded)
-    pred_cwi_binary = np.argmax(pred_cwi, axis = 2)
-    complete_cwi_predictions = complete_missing_word(pred_cwi_binary, index_list, len_list)
-    bert_candidates =   get_bert_candidates(input_text, complete_cwi_predictions, tokenizer, model)
-    for word_to_replace, l_candidates in bert_candidates:
-      tuples_word_zipf = []
-      for w in l_candidates:
-        if w.isalpha():
-          tuples_word_zipf.append((w, zipf_frequency(w, 'en')))
-      tuples_word_zipf = sorted(tuples_word_zipf, key = lambda x: x[1], reverse=True)
-      if len(tuples_word_zipf) != 0:
-        new_text = re.sub(word_to_replace, tuples_word_zipf[0][0], new_text) 
-    newlis.append(new_text)
-  return newlis
+  newbag = []
+  # print(bag)
+  for list_texts in bag:
+    newlis = []
+    for input_text in list_texts:
+      # print(input_text)
+      new_text = input_text
+      input_padded, index_list, len_list = process_input(input_text, word2index, sent_max_length)
+      pred_cwi = model_cwi.predict(input_padded)
+      pred_cwi_binary = np.argmax(pred_cwi, axis = 2)
+      complete_cwi_predictions = complete_missing_word(pred_cwi_binary, index_list, len_list)
+      bert_candidates =   get_bert_candidates(input_text, complete_cwi_predictions, tokenizer, model)
+      for word_to_replace, l_candidates in bert_candidates:
+        tuples_word_zipf = []
+        for w in l_candidates:
+          if w.isalpha():
+            tuples_word_zipf.append((w, zipf_frequency(w, 'en')))
+        tuples_word_zipf = sorted(tuples_word_zipf, key = lambda x: x[1], reverse=True)
+        if len(tuples_word_zipf) != 0:
+          new_text = re.sub(word_to_replace, tuples_word_zipf[0][0], new_text)
+      # print(new_text, '__________') 
+      newlis.append(new_text)
+    newbag.append(newlis)
+  return newbag
